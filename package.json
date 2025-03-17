@@ -16,7 +16,7 @@
     "dev": "tsup src/index.ts --format cjs,esm --sourcemap --dts --publicDir public --watch --onSuccess \"node --enable-source-maps --no-node-snapshot dist/index.js\"",
     "start": "node --enable-source-maps --no-node-snapshot dist/index.js",
     "build": "tsup src/index.ts --format cjs,esm --sourcemap --dts --clean --publicDir public",
-    "build:cf": "esbuild src/cloudflare-native.ts --bundle --platform=node --target=node18 --outfile=dist/cloudflare-native.js",
+    "build:cf": "esbuild src/cloudflare-native.ts --bundle --platform=node --target=node18 --format=esm --outfile=dist/cloudflare-native.js",
     "deploy:cf": "npm run build:cf && npx wrangler deploy"
   },
   "author": "Vinlic",

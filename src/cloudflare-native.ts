@@ -7,6 +7,7 @@ import logger from './lib/logger.ts'
 // 确保在 Cloudflare Workers 环境中正确设置环境变量
 process.env.CLOUDFLARE_WORKER = 'true'
 
+// 使用 ESM 导出语法
 export default {
   async fetch(request: Request) {
     try {

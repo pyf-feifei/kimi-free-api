@@ -1,24 +1,6 @@
-import server from './lib/server.ts'
-
-// 在 Workers 环境中模拟必要的环境变量和函数
-if (typeof globalThis.process === 'undefined') {
-  // @ts-ignore
-  globalThis.process = { env: {} };
-}
-
-// 设置时区环境变量，避免 date-fns 读取系统时区
-globalThis.process.env.TZ = 'Asia/Shanghai';
-
-// 模拟 fs 模块以防止 date-fns 调用失败
-// @ts-ignore
-globalThis.require = function(mod) {
-  if (mod === 'fs') {
-    return {
-      readFileSync: () => null
-    };
-  }
-  throw new Error(`模块 ${mod} 不可用`);
-};
+// 首先导入模拟环境
+import './cloudflare-shims.ts';
+import server from './lib/server.ts';
 
 // 新增类型定义
 interface KoaContext {

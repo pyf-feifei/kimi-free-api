@@ -5,6 +5,8 @@ node_compat = true
 
 [build]
 command = "npm run build:cf"
+# 添加npm作为包管理器
+package_manager = "npm"
 
 [vars]
 CLOUDFLARE_WORKER = "true"

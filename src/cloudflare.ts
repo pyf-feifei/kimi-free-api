@@ -18,6 +18,8 @@ interface KoaContext {
   }
   req?: any
   res?: any
+  set?: (key: string, value: string) => void
+  body?: any
 }
 
 // 确保在 Cloudflare Workers 环境中正确设置环境变量
@@ -35,21 +37,34 @@ export default {
           headers: Object.fromEntries(request.headers),
           body: await request.text(),
         },
-        response: {},
+        response: {
+          status: 200,
+          headers: {},
+          body: null
+        },
         req: {
           headers: Object.fromEntries(request.headers)
         },
-        res: {}
+        res: {},
+        // 添加set方法模拟Koa的ctx.set
+        set: function(key: string, value: string) {
+          if (!this.response.headers) this.response.headers = {};
+          this.response.headers[key] = value;
+        }
       }
       
       // 执行Koa中间件链
       await server.app.callback()(koaCtx as any)
       
       // 转换响应格式
-      return new Response(koaCtx.response.body, {
-        status: koaCtx.response.status || 200,
-        headers: new Headers(koaCtx.response.headers || {})
-      })
+      return new Response(
+        // 优先使用ctx.body，如果不存在则使用ctx.response.body
+        koaCtx.body !== undefined ? koaCtx.body : koaCtx.response.body, 
+        {
+          status: koaCtx.response.status || 200,
+          headers: new Headers(koaCtx.response.headers || {})
+        }
+      )
     } catch (error) {
       console.error('Cloudflare Worker 错误:', error)
       

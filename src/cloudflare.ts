@@ -20,6 +20,9 @@ interface KoaContext {
   res?: any
 }
 
+// 确保在 Cloudflare Workers 环境中正确设置环境变量
+process.env.CLOUDFLARE_WORKER = 'true';
+
 export default {
   async fetch(request: Request) {
     try {
@@ -48,14 +51,21 @@ export default {
         headers: new Headers(koaCtx.response.headers || {})
       })
     } catch (error) {
-      console.error('Worker执行错误:', error)
-      return new Response(JSON.stringify({
-        error: '服务器内部错误',
-        message: error instanceof Error ? error.message : String(error)
-      }), {
-        status: 500,
-        headers: { 'Content-Type': 'application/json' }
-      })
+      console.error('Cloudflare Worker 错误:', error)
+      
+      // 返回一个有效的响应对象
+      return new Response(
+        JSON.stringify({
+          error: '服务器内部错误',
+          message: error.message || '未知错误'
+        }),
+        {
+          status: 500,
+          headers: {
+            'Content-Type': 'application/json'
+          }
+        }
+      );
     }
   }
-}
+};

@@ -14,6 +14,12 @@ const mockFs = {
     console.log(`模拟读取文件: ${path}`);
     // 为配置文件返回默认配置
     if (typeof path === 'string') {
+      // 处理环境配置文件
+      if (path.includes('environment.ts') || path.includes('/lib/environment.ts') || path.includes('\\lib\\environment.ts')) {
+        return `// 环境配置模拟`;
+      }
+      
+      // 处理服务配置文件
       if (path.includes('service.yml') || path.includes('/configs/service.yml') || path.includes('\\configs\\service.yml')) {
         return `
 # 服务名称
@@ -24,6 +30,8 @@ host: '0.0.0.0'
 port: 8000
 `;
       }
+      
+      // 处理系统配置文件
       if (path.includes('system.yml') || path.includes('/configs/system.yml') || path.includes('\\configs\\system.yml')) {
         return `
 # 是否开启请求日志
@@ -31,7 +39,7 @@ requestLog: true
 # 临时目录路径
 tmpDir: ./tmp
 # 日志目录路径
-logDir: ./logs
+logDirPath: ./logs
 # 日志写入间隔（毫秒）
 logWriteInterval: 200
 # 日志文件有效期（毫秒）
@@ -47,6 +55,12 @@ tmpFileExpires: 86400000
       if (path.includes('node_modules/date-fns') || path.includes('differenceInCalendarDays')) {
         return '';
       }
+      
+      // 处理任何其他YAML配置文件
+      if (path.endsWith('.yml') || path.endsWith('.yaml')) {
+        console.log(`模拟读取未知YAML文件: ${path}`);
+        return '# 默认配置\ndefault: true';
+      }
     }
     
     // 对于其他文件，返回空字符串
@@ -54,8 +68,12 @@ tmpFileExpires: 86400000
   },
   existsSync: (path) => {
     // 对配置文件返回true
-    if (typeof path === 'string' && (path.includes('service.yml') || path.includes('system.yml'))) {
-      return true;
+    if (typeof path === 'string') {
+      if (path.includes('service.yml') || path.includes('system.yml') || 
+          path.includes('/configs/') || path.includes('\\configs\\') ||
+          path.endsWith('.yml') || path.endsWith('.yaml')) {
+        return true;
+      }
     }
     return false;
   },
@@ -67,8 +85,12 @@ tmpFileExpires: 86400000
   ensureDirSync: () => {},
   pathExistsSync: (path) => {
     // 对配置文件返回true
-    if (typeof path === 'string' && (path.includes('service.yml') || path.includes('system.yml'))) {
-      return true;
+    if (typeof path === 'string') {
+      if (path.includes('service.yml') || path.includes('system.yml') || 
+          path.includes('/configs/') || path.includes('\\configs\\') ||
+          path.endsWith('.yml') || path.endsWith('.yaml')) {
+        return true;
+      }
     }
     return false;
   },
@@ -218,6 +240,22 @@ if (typeof globalThis.Buffer === 'undefined') {
 
   // @ts-ignore
   globalThis.Buffer = MockBuffer;
+}
+
+// 拦截 unenv 的错误
+try {
+  // @ts-ignore
+  if (globalThis.createNotImplementedError) {
+    // @ts-ignore
+    const originalCreateNotImplementedError = globalThis.createNotImplementedError;
+    // @ts-ignore
+    globalThis.createNotImplementedError = function(name) {
+      console.warn(`拦截 unenv 错误: ${name} 未实现`);
+      return new Error(`[模拟] ${name} 已被模拟实现`);
+    };
+  }
+} catch (e) {
+  console.warn('无法拦截 unenv 错误:', e);
 }
 
 console.log('Cloudflare 环境模拟已加载');

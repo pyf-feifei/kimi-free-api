@@ -22,26 +22,23 @@ interface KoaContext {
 
 export default {
   async fetch(request: Request) {
-    // 设置环境变量
-    globalThis.process.env.CLOUDFLARE_WORKER = 'true';
-    
-    // 创建Koa兼容的上下文对象
-    const koaCtx: KoaContext = {
-      request: {
-        method: request.method,
-        url: request.url,
-        href: request.url,
-        headers: Object.fromEntries(request.headers),
-        body: await request.text(),
-      },
-      response: {},
-      req: {
-        headers: Object.fromEntries(request.headers)
-      },
-      res: {}
-    }
-    
     try {
+      // 创建Koa兼容的上下文对象
+      const koaCtx: KoaContext = {
+        request: {
+          method: request.method,
+          url: request.url,
+          href: request.url,
+          headers: Object.fromEntries(request.headers),
+          body: await request.text(),
+        },
+        response: {},
+        req: {
+          headers: Object.fromEntries(request.headers)
+        },
+        res: {}
+      }
+      
       // 执行Koa中间件链
       await server.app.callback()(koaCtx as any)
       
@@ -54,7 +51,7 @@ export default {
       console.error('Worker执行错误:', error)
       return new Response(JSON.stringify({
         error: '服务器内部错误',
-        message: error.message
+        message: error instanceof Error ? error.message : String(error)
       }), {
         status: 500,
         headers: { 'Content-Type': 'application/json' }

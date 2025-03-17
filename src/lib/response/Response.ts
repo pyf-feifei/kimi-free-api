@@ -43,34 +43,28 @@ export default class Response {
     }
 
     injectTo(ctx) {
-        // 确保 ctx.response 存在
+        // 确保存在有效的响应对象
         if (!ctx.response) {
-            ctx.response = {};
+            ctx.response = {
+                status: 200,
+                statusCode: 200,
+                headers: {},
+                body: null
+            };
         }
         
-        // 确保 ctx.response.headers 存在
-        if (!ctx.response.headers) {
-            ctx.response.headers = {};
-        }
-        
-        // 设置状态码
-        ctx.response.status = this.body.statusCode;
+        // 设置状态码（兼容Koa和Cloudflare两种方式）
+        const statusCode = this.body?.statusCode || 200;
+        ctx.response.status = statusCode;
+        ctx.response.statusCode = statusCode;
         
         // 设置响应体
-        if (this.body instanceof Body) {
-            ctx.body = this.body.toObject();
-        } else {
-            ctx.body = this.body;
-        }
+        ctx.body = this.body instanceof Body ? this.body.toObject() : this.body;
         
-        // 设置响应头
+        // 处理响应头
         if (this.headers) {
-            for (let key in this.headers) {
-                if (typeof ctx.set === 'function') {
-                    ctx.set(key, this.headers[key]);
-                } else if (ctx.response && ctx.response.headers) {
-                    ctx.response.headers[key] = this.headers[key];
-                }
+            for (const [key, value] of Object.entries(this.headers)) {
+                ctx.set(key, value);
             }
         }
     }

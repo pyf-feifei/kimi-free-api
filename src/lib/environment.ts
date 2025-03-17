@@ -42,3 +42,41 @@ export default new Environment({
     envVars,
     package: JSON.parse(fs.readFileSync(path.join(path.resolve(), "package.json")).toString())
 });
+
+
+export function loadConfig() {
+  // 检查是否在Cloudflare环境中
+  const isCloudflareEnv = typeof process.env.CLOUDFLARE_WORKER !== 'undefined';
+  
+  if (isCloudflareEnv) {
+    // 在Cloudflare环境中使用硬编码配置
+    return {
+      service: {
+        name: 'kimi-free-api',
+        host: '0.0.0.0',
+        port: 8000,
+        urlPrefix: ''
+      },
+      system: {
+        requestLog: true,
+        tmpDir: './tmp',
+        logDirPath: './logs',
+        logWriteInterval: 200,
+        logFileExpires: 2626560000,
+        publicDir: './public',
+        tmpFileExpires: 86400000,
+        requestBody: {
+          // 请求体配置
+          multipart: true,
+          formidable: {
+            maxFileSize: 200 * 1024 * 1024
+          }
+        }
+      }
+    };
+  } else {
+    // 在非Cloudflare环境中正常读取文件
+    // 原有的文件读取逻辑
+    // ...
+  }
+}

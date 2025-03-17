@@ -10,15 +10,55 @@ globalThis.process.env.TZ = 'Asia/Shanghai';
 
 // 模拟 fs 模块
 const mockFs = {
-  readFileSync: () => '',
-  existsSync: () => false,
+  readFileSync: (path, options) => {
+    console.log(`模拟读取文件: ${path}`);
+    // 为配置文件返回默认配置
+    if (typeof path === 'string') {
+      if (path.includes('service.yml')) {
+        return `
+# 服务名称
+name: kimi-free-api
+# 服务绑定主机地址
+host: '0.0.0.0'
+# 服务绑定端口
+port: 8000
+`;
+      }
+      if (path.includes('system.yml')) {
+        return `
+# 是否开启请求日志
+requestLog: true
+# 临时目录路径
+tmpDir: ./tmp
+# 日志目录路径
+logDirPath: ./logs
+# 日志写入间隔(ms)
+logWriteInterval: 1000
+`;
+      }
+    }
+    return '';
+  },
+  existsSync: (path) => {
+    // 对配置文件返回true
+    if (typeof path === 'string' && (path.includes('service.yml') || path.includes('system.yml'))) {
+      return true;
+    }
+    return false;
+  },
   writeFileSync: () => {},
   appendFileSync: () => {},
   mkdirSync: () => {},
   readdirSync: () => [],
   statSync: () => ({ isDirectory: () => false }),
   ensureDirSync: () => {},
-  pathExistsSync: () => false,
+  pathExistsSync: (path) => {
+    // 对配置文件返回true
+    if (typeof path === 'string' && (path.includes('service.yml') || path.includes('system.yml'))) {
+      return true;
+    }
+    return false;
+  },
   appendFile: () => Promise.resolve(),
   ensureDir: () => Promise.resolve()
 };
@@ -38,6 +78,39 @@ globalThis.require = function(mod) {
   }
   if (mod === 'path') {
     return mockPath;
+  }
+  if (mod === 'yaml') {
+    return {
+      parse: (str) => {
+        // 简单的YAML解析
+        const result = {};
+        const lines = str.split('\n');
+        for (const line of lines) {
+          if (line.trim() && !line.trim().startsWith('#')) {
+            const parts = line.split(':');
+            if (parts.length >= 2) {
+              const key = parts[0].trim();
+              const value = parts.slice(1).join(':').trim();
+              if (key) {
+                // 处理引号
+                if (value.startsWith("'") && value.endsWith("'")) {
+                  result[key] = value.slice(1, -1);
+                } else if (!isNaN(Number(value))) {
+                  result[key] = Number(value);
+                } else if (value === 'true') {
+                  result[key] = true;
+                } else if (value === 'false') {
+                  result[key] = false;
+                } else {
+                  result[key] = value;
+                }
+              }
+            }
+          }
+        }
+        return result;
+      }
+    };
   }
   throw new Error(`模块 ${mod} 不可用`);
 };

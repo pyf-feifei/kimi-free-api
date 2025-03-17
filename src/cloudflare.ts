@@ -1,7 +1,18 @@
 import server from './lib/server.ts'
-import type { ExecutionContext } from '@cloudflare/workers-types'
 
-// 定义Koa兼容的上下文类型
+// 在 Workers 环境中模拟 fs 模块
+if (typeof process.env.CLOUDFLARE_WORKER !== 'undefined') {
+  // 防止 date-fns 使用 fs 模块
+  globalThis.process = {
+    ...globalThis.process,
+    env: {
+      ...globalThis.process?.env,
+      TZ: 'UTC' // 设置默认时区为 UTC
+    }
+  };
+}
+
+// 新增类型定义
 interface KoaContext {
   request: {
     method: string
@@ -20,7 +31,7 @@ interface KoaContext {
 }
 
 export default {
-  async fetch(request: Request, env: any, ctx: ExecutionContext) {
+  async fetch(request: Request) {
     // 创建Koa兼容的上下文对象
     const koaCtx: KoaContext = {
       request: {

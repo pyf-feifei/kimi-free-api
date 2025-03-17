@@ -8,3 +8,4 @@ command = "npm run build:cf"
 
 [vars]
 CLOUDFLARE_WORKER = "true"
+TZ = "Asia/Shanghai"

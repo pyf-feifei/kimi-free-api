@@ -1,12 +1,10 @@
 name = "kimi-free-api"
 main = "dist/cloudflare.js"
 compatibility_date = "2024-05-01"
-node_compat = true
+compatibility_flags = ["nodejs_compat"]
 
 [build]
 command = "npm run build:cf"
-# 添加npm作为包管理器
-package_manager = "npm"
 
 [vars]
 CLOUDFLARE_WORKER = "true"

@@ -48,6 +48,11 @@ export default class Response {
             ctx.response = {};
         }
         
+        // 确保 ctx.response.headers 存在
+        if (!ctx.response.headers) {
+            ctx.response.headers = {};
+        }
+        
         // 设置状态码
         ctx.response.status = this.body.statusCode;
         
@@ -61,7 +66,11 @@ export default class Response {
         // 设置响应头
         if (this.headers) {
             for (let key in this.headers) {
-                ctx.set(key, this.headers[key]);
+                if (typeof ctx.set === 'function') {
+                    ctx.set(key, this.headers[key]);
+                } else if (ctx.response && ctx.response.headers) {
+                    ctx.response.headers[key] = this.headers[key];
+                }
             }
         }
     }

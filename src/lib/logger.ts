@@ -13,15 +13,16 @@ const isVercelEnv = process.env.VERCEL;
 
 class LogWriter {
 
-    #buffers = [];
+    #buffers?: any[] = [];
 
-    // 在构造函数中
     constructor() {
         // 在Cloudflare环境中不使用文件系统
         const isCloudflareEnv = typeof process.env.CLOUDFLARE_WORKER !== 'undefined';
         if (!isVercelEnv && !isCloudflareEnv) {
             fs.ensureDirSync(config.system.logDirPath);
             this.work();
+            // 只有在非Cloudflare环境中初始化buffers
+            this.#buffers = [];
         }
     }
 
@@ -51,6 +52,29 @@ class LogWriter {
         .catch(err => console.error("Log write error:", err));
     }
 
+    // 添加push方法
+    push(content) {
+        const isCloudflareEnv = typeof process.env.CLOUDFLARE_WORKER !== 'undefined';
+        if (isCloudflareEnv) {
+            // 在Cloudflare环境中直接输出到控制台
+            console.log(content);
+            return;
+        }
+        
+        // 确保buffers存在
+        if (this.#buffers) {
+            this.#buffers.push(Buffer.from(content));
+        }
+    }
+
+    // 添加destroy方法（注意拼写）
+    destroy() {
+        // 清理资源
+        if (this.#buffers) {
+            this.flush();
+            this.#buffers = [];
+        }
+    }
 }
 
 class LogText {
@@ -121,10 +145,13 @@ class Logger {
         [Logger.Level.Error]: "brightRed",
         [Logger.Level.Fatal]: "red"
     };
-    #writer;
+    #writer?: LogWriter;
 
     constructor() {
-        this.#writer = new LogWriter();
+        const isCloudflareEnv = typeof process.env.CLOUDFLARE_WORKER !== 'undefined';
+        if (!isCloudflareEnv) {
+            this.#writer = new LogWriter();
+        }
     }
 
     header() {
@@ -137,52 +164,75 @@ class Logger {
     }
 
     success(...params) {
+        const isCloudflareEnv = typeof process.env.CLOUDFLARE_WORKER !== 'undefined';
         const content = new LogText(Logger.Level.Success, ...params).toString();
         console.info(content[Logger.LevelColor[Logger.Level.Success]]);
-        this.#writer.push(content + "\n");
+        if (!isCloudflareEnv && this.#writer) {
+            this.#writer.push(content + "\n");
+        }
     }
 
     info(...params) {
+        const isCloudflareEnv = typeof process.env.CLOUDFLARE_WORKER !== 'undefined';
         const content = new LogText(Logger.Level.Info, ...params).toString();
         console.info(content[Logger.LevelColor[Logger.Level.Info]]);
-        this.#writer.push(content + "\n");
+        if (!isCloudflareEnv && this.#writer) {
+            this.#writer.push(content + "\n");
+        }
     }
 
     log(...params) {
+        const isCloudflareEnv = typeof process.env.CLOUDFLARE_WORKER !== 'undefined';
         const content = new LogText(Logger.Level.Log, ...params).toString();
         console.log(content[Logger.LevelColor[Logger.Level.Log]]);
-        this.#writer.push(content + "\n");
+        if (!isCloudflareEnv && this.#writer) {
+            this.#writer.push(content + "\n");
+        }
     }
 
     debug(...params) {
         if(!config.system.debug) return;  //非调试模式忽略debug
+        const isCloudflareEnv = typeof process.env.CLOUDFLARE_WORKER !== 'undefined';
         const content = new LogText(Logger.Level.Debug, ...params).toString();
         console.debug(content[Logger.LevelColor[Logger.Level.Debug]]);
-        this.#writer.push(content + "\n");
+        if (!isCloudflareEnv && this.#writer) {
+            this.#writer.push(content + "\n");
+        }
     }
 
     warn(...params) {
+        const isCloudflareEnv = typeof process.env.CLOUDFLARE_WORKER !== 'undefined';
         const content = new LogText(Logger.Level.Warning, ...params).toString();
         console.warn(content[Logger.LevelColor[Logger.Level.Warning]]);
-        this.#writer.push(content + "\n");
+        if (!isCloudflareEnv && this.#writer) {
+            this.#writer.push(content + "\n");
+        }
     }
 
     error(...params) {
+        const isCloudflareEnv = typeof process.env.CLOUDFLARE_WORKER !== 'undefined';
         const content = new LogText(Logger.Level.Error, ...params).toString();
         console.error(content[Logger.LevelColor[Logger.Level.Error]]);
-        this.#writer.push(content);
+        if (!isCloudflareEnv && this.#writer) {
+            this.#writer.push(content);
+        }
     }
 
     fatal(...params) {
+        const isCloudflareEnv = typeof process.env.CLOUDFLARE_WORKER !== 'undefined';
         const content = new LogText(Logger.Level.Fatal, ...params).toString();
         console.error(content[Logger.LevelColor[Logger.Level.Fatal]]);
-        this.#writer.push(content);
+        if (!isCloudflareEnv && this.#writer) {
+            this.#writer.push(content);
+        }
     }
 
-    destory() {
-        this.#writer.destory();
+    // 修正拼写错误
+    destroy() {
+        if (this.#writer) {
+            this.#writer.destroy();
+        }
     }
-
 }
 
 export default new Logger();

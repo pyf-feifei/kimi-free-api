@@ -8,4 +8,3 @@ command = "npm run build:cf"
 
 [vars]
 CLOUDFLARE_WORKER = "true"
-CF_PAGES_URL = "https://your-domain.pages.dev"  # 替换为实际部署域名

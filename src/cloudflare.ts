@@ -1,16 +1,24 @@
 import server from './lib/server.ts'
 
-// 在 Workers 环境中模拟 fs 模块
-if (typeof process.env.CLOUDFLARE_WORKER !== 'undefined') {
-  // 防止 date-fns 使用 fs 模块
-  globalThis.process = {
-    ...globalThis.process,
-    env: {
-      ...globalThis.process?.env,
-      TZ: 'UTC' // 设置默认时区为 UTC
-    }
-  };
+// 在 Workers 环境中模拟必要的环境变量和函数
+if (typeof globalThis.process === 'undefined') {
+  // @ts-ignore
+  globalThis.process = { env: {} };
 }
+
+// 设置时区环境变量，避免 date-fns 读取系统时区
+globalThis.process.env.TZ = 'Asia/Shanghai';
+
+// 模拟 fs 模块以防止 date-fns 调用失败
+// @ts-ignore
+globalThis.require = function(mod) {
+  if (mod === 'fs') {
+    return {
+      readFileSync: () => null
+    };
+  }
+  throw new Error(`模块 ${mod} 不可用`);
+};
 
 // 新增类型定义
 interface KoaContext {
@@ -32,6 +40,9 @@ interface KoaContext {
 
 export default {
   async fetch(request: Request) {
+    // 设置环境变量
+    globalThis.process.env.CLOUDFLARE_WORKER = 'true';
+    
     // 创建Koa兼容的上下文对象
     const koaCtx: KoaContext = {
       request: {
@@ -47,9 +58,6 @@ export default {
       },
       res: {}
     }
-
-    // 设置环境变量
-    process.env.CLOUDFLARE_WORKER = 'true'
     
     try {
       // 执行Koa中间件链

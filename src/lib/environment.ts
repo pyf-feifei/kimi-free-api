@@ -37,10 +37,20 @@ class Environment {
 
 }
 
+// 检查是否在Cloudflare环境中
+const isCloudflareEnv = typeof process.env.CLOUDFLARE_WORKER !== 'undefined';
+
+// 根据环境选择不同的初始化方式
 export default new Environment({
     cmdArgs,
     envVars,
-    package: JSON.parse(fs.readFileSync(path.join(path.resolve(), "package.json")).toString())
+    package: isCloudflareEnv 
+        ? { 
+            name: "kimi-free-api",
+            version: "0.0.36",
+            description: "Kimi Free API Server"
+          } 
+        : JSON.parse(fs.readFileSync(path.join(path.resolve(), "package.json")).toString())
 });
 
 
@@ -76,7 +86,24 @@ export function loadConfig() {
     };
   } else {
     // 在非Cloudflare环境中正常读取文件
-    // 原有的文件读取逻辑
-    // ...
+    const yaml = require('yaml');
+    const configsPath = path.join(path.resolve(), 'configs');
+    
+    // 读取服务配置
+    const serviceConfigPath = path.join(configsPath, 'service.yml');
+    const serviceConfig = fs.existsSync(serviceConfigPath)
+      ? yaml.parse(fs.readFileSync(serviceConfigPath, 'utf8'))
+      : {};
+    
+    // 读取系统配置
+    const systemConfigPath = path.join(configsPath, 'system.yml');
+    const systemConfig = fs.existsSync(systemConfigPath)
+      ? yaml.parse(fs.readFileSync(systemConfigPath, 'utf8'))
+      : {};
+    
+    return {
+      service: serviceConfig,
+      system: systemConfig
+    };
   }
 }

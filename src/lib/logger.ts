@@ -15,18 +15,22 @@ class LogWriter {
 
     #buffers = [];
 
+    // 在构造函数中
     constructor() {
-        !isVercelEnv && fs.ensureDirSync(config.system.logDirPath);
-        !isVercelEnv && this.work();
+        // 在Cloudflare环境中不使用文件系统
+        const isCloudflareEnv = typeof process.env.CLOUDFLARE_WORKER !== 'undefined';
+        if (!isVercelEnv && !isCloudflareEnv) {
+            fs.ensureDirSync(config.system.logDirPath);
+            this.work();
+        }
     }
 
-    push(content) {
-        const buffer = Buffer.from(content);
-        this.#buffers.push(buffer);
-    }
-
+    // 修改writeSync方法
     writeSync(buffer) {
-        !isVercelEnv && fs.appendFileSync(path.join(config.system.logDirPath, `/${util.getDateString()}.log`), buffer);
+        const isCloudflareEnv = typeof process.env.CLOUDFLARE_WORKER !== 'undefined';
+        if (!isVercelEnv && !isCloudflareEnv) {
+            fs.appendFileSync(path.join(config.system.logDirPath, `/${util.getDateString()}.log`), buffer);
+        }
     }
 
     async write(buffer) {

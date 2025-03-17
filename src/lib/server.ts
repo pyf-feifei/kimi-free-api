@@ -18,8 +18,34 @@ class Server {
     app;
     router;
     
+    // 在构造函数中增加请求转换中间件
     constructor() {
         this.app = new Koa();
+        
+        // 增强Cloudflare请求转换中间件
+        this.app.use(async (ctx, next) => {
+            if (process.env.CLOUDFLARE_WORKER === 'true') {
+                // 确保请求对象结构完整
+                if (!ctx.req) ctx.req = {};
+                if (!ctx.req.headers) ctx.req.headers = {};
+                
+                // 处理content-type
+                if (ctx.request.headers && 
+                    (ctx.request.headers['content-type'] === 'application/json' || 
+                     ctx.request.headers['Content-Type'] === 'application/json')) {
+                    try {
+                        // 尝试解析JSON请求体
+                        if (typeof ctx.request.body === 'string') {
+                            ctx.request.body = JSON.parse(ctx.request.body);
+                        }
+                    } catch (e) {
+                        // 解析失败时保持原样
+                        logger.warn('JSON解析失败:', e);
+                    }
+                }
+            }
+            await next();
+        });
         this.app.use(koaCors());
         // 范围请求支持
         this.app.use(koaRange);
@@ -146,7 +172,13 @@ class Server {
     /**
      * 监听端口
      */
+    // 修改listen方法
     async listen() {
+        if (process.env.CLOUDFLARE_WORKER === 'true') {
+            logger.success('Running in Cloudflare Workers environment');
+            return;
+        }
+
         const host = config.service.host;
         const port = config.service.port;
         await Promise.all([

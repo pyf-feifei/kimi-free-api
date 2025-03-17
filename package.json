@@ -15,7 +15,9 @@
   "scripts": {
     "dev": "tsup src/index.ts --format cjs,esm --sourcemap --dts --publicDir public --watch --onSuccess \"node --enable-source-maps --no-node-snapshot dist/index.js\"",
     "start": "node --enable-source-maps --no-node-snapshot dist/index.js",
-    "build": "tsup src/index.ts --format cjs,esm --sourcemap --dts --clean --publicDir public"
+    "build": "tsup src/index.ts --format cjs,esm --sourcemap --dts --clean --publicDir public",
+    "build:cf": "tsup src/cloudflare.ts --format esm --sourcemap --clean",
+    "deploy:cf": "npm run build:cf && wrangler deploy"
   },
   "author": "Vinlic",
   "license": "ISC",
@@ -41,6 +43,7 @@
     "yaml": "^2.3.4"
   },
   "devDependencies": {
+    "@cloudflare/workers-types": "^4.20250313.0",
     "@types/lodash": "^4.14.202",
     "@types/mime": "^3.0.4",
     "tsup": "^8.0.2",

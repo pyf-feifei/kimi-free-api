@@ -43,17 +43,27 @@ export default class Response {
     }
 
     injectTo(ctx) {
-        this.redirect && ctx.redirect(this.redirect);
-        this.statusCode && (ctx.status = this.statusCode);
-        this.type && (ctx.type = mime.getType(this.type) || this.type);
-        const headers = this.headers || {};
-        if(this.size && !headers["Content-Length"] && !headers["content-length"])
-            headers["Content-Length"] = this.size;
-        ctx.set(headers);
-        if(Body.isInstance(this.body))
+        // 确保 ctx.response 存在
+        if (!ctx.response) {
+            ctx.response = {};
+        }
+        
+        // 设置状态码
+        ctx.response.status = this.body.statusCode;
+        
+        // 设置响应体
+        if (this.body instanceof Body) {
             ctx.body = this.body.toObject();
-        else
+        } else {
             ctx.body = this.body;
+        }
+        
+        // 设置响应头
+        if (this.headers) {
+            for (let key in this.headers) {
+                ctx.set(key, this.headers[key]);
+            }
+        }
     }
 
     static isInstance(value) {

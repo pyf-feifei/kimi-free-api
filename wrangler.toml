@@ -1,5 +1,5 @@
 name = "kimi-free-api"
-main = "dist/cloudflare.js"
+main = "dist/cloudflare-native.js"
 compatibility_date = "2024-09-23"
 compatibility_flags = ["nodejs_compat"]
 

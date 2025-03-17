@@ -14,7 +14,7 @@ const mockFs = {
     console.log(`模拟读取文件: ${path}`);
     // 为配置文件返回默认配置
     if (typeof path === 'string') {
-      if (path.includes('service.yml')) {
+      if (path.includes('service.yml') || path.includes('/configs/service.yml') || path.includes('\\configs\\service.yml')) {
         return `
 # 服务名称
 name: kimi-free-api
@@ -24,19 +24,32 @@ host: '0.0.0.0'
 port: 8000
 `;
       }
-      if (path.includes('system.yml')) {
+      if (path.includes('system.yml') || path.includes('/configs/system.yml') || path.includes('\\configs\\system.yml')) {
         return `
 # 是否开启请求日志
 requestLog: true
 # 临时目录路径
 tmpDir: ./tmp
 # 日志目录路径
-logDirPath: ./logs
-# 日志写入间隔(ms)
-logWriteInterval: 1000
+logDir: ./logs
+# 日志写入间隔（毫秒）
+logWriteInterval: 200
+# 日志文件有效期（毫秒）
+logFileExpires: 2626560000
+# 公共目录路径
+publicDir: ./public
+# 临时文件有效期（毫秒）
+tmpFileExpires: 86400000
 `;
       }
+      
+      // 处理 date-fns 库可能读取的文件
+      if (path.includes('node_modules/date-fns') || path.includes('differenceInCalendarDays')) {
+        return '';
+      }
     }
+    
+    // 对于其他文件，返回空字符串
     return '';
   },
   existsSync: (path) => {
